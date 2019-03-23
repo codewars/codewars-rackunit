@@ -22,15 +22,19 @@
 
 
 ;;; check-info stack filter
-(define *simple-check-infos* '(name location actual excepted))
+(define *quiet-check-infos* '(message actual excepted))
+(define *simple-check-infos* '(name location message actual excepted))
 (define *verbose-check-infos* '(expression params))
 
 (define (check-info-stack-filter stack mode)
   (case mode
-    [(all) stack]
+    [(quiet) (filter quiet-check-info? stack)]
     [(simple) (filter simple-check-info? stack)]
-    [(custom) (filter not-verbose-check-info? stack)]))
+    [(custom) (filter not-verbose-check-info? stack)]
+    [(all) stack]))
 
+(define (quiet-check-info? info)
+  (member info *quiet-check-infos* check-info-with-name?))
 (define (simple-check-info? info)
   (member info *simple-check-infos* check-info-with-name?))
 (define (verbose-check-info? info)
@@ -133,10 +137,11 @@
 ;;; run-tests: test-suite * ('simple 'custom 'all) -> (void)
 ;;; #:mode keyword argument is one of 'simple, 'custom and 'all,
 ;;; it controls how to display the check-info stack.
-;;;   'simple mode displays location, actual, and except;
-;;;   'custom mode displays all above and user customed check-info;
-;;;   'all mode displays the whole check-info-stack.
-(define (run-tests test #:mode [mode 'custom])
+;;;   'quiet mode displays message, actual, and excepted;
+;;;   'simple mode displays all in 'quiet mode and name and location;
+;;;   'custom mode displays all in 'simple mode and user customed check-info;
+;;;   'all mode displays the whole check-info stack.
+(define (run-tests test #:mode [mode 'quiet])
   (let ([test-result
          (foldts-test-suite fdown fup (fhere mode) #f test)])
     (when test-result (exit 1))))
