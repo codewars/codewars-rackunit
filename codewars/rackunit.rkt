@@ -15,12 +15,34 @@
 
 
 ;;; handle failed test output
-(define (log-exn:test:check e)
+(define (log-exn:test:check e mode)
   (with-tag "FAILED"
-    (check-info-stack->string (exn:test:check-stack e))))
+    (check-infos->string
+     (check-info-stack-filter (exn:test:check-stack e) mode))))
 
 
-(define (check-info-stack->string stack)
+;;; check-info stack filter
+(define *simple-check-infos* '(name location actual excepted))
+(define *verbose-check-infos* '(expression params))
+
+(define (check-info-stack-filter stack mode)
+  (case mode
+    [(all) stack]
+    [(simple) (filter simple-check-info? stack)]
+    [(custom) (filter not-verbose-check-info? stack)]))
+
+(define (simple-check-info? info)
+  (member info *simple-check-infos* check-info-with-name?))
+(define (verbose-check-info? info)
+  (member info *verbose-check-infos* check-info-with-name?))
+(define (not-verbose-check-info? info)
+  (not (verbose-check-info? info)))
+
+(define (check-info-with-name? info name)
+  (eq? (check-info-name info) name))
+
+;;; display check-infos
+(define (check-infos->string stack)
   (define name-width (max-name-width stack))
   (define lines
     (flatten (map (lambda (info)
@@ -92,12 +114,12 @@
   (display completed)
   (or failed kid-failed?))
 
-(define (fhere case name action failed?)
+(define ((fhere mode) case name action failed?)
   (when name (display (with-tag "IT" name)))
   (define-values (result here-failed?)
     (with-handlers ([exn:test:check?
                      (lambda (e)
-                       (values (log-exn:test:check e) #t))]
+                       (values (log-exn:test:check e mode) #t))]
                     [(lambda (x) #t)
                      (lambda (e)
                        (values (log-raised e) #t))])
@@ -108,7 +130,14 @@
   (or failed? here-failed?))
 
 
-(define (run-tests test)
-  (let ([test-result (foldts-test-suite fdown fup fhere #f test)])
+;;; run-tests: test-suite * ('simple 'custom 'all) -> (void)
+;;; #:mode keyword argument is one of 'simple, 'custom and 'all,
+;;; it controls how to display the check-info stack.
+;;;   'simple mode displays location, actual, and except;
+;;;   'custom mode displays all above and user customed check-info;
+;;;   'all mode displays the whole check-info-stack.
+(define (run-tests test #:mode [mode 'custom])
+  (let ([test-result
+         (foldts-test-suite fdown fup (fhere mode) #f test)])
     (when test-result (exit 1))))
 
