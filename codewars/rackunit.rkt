@@ -22,8 +22,8 @@
 
 
 ;;; check-info stack filter
-(define *quiet-check-infos* '(message actual excepted))
-(define *simple-check-infos* '(name location message actual excepted))
+(define *quiet-check-infos* '(message actual expected))
+(define *simple-check-infos* '(name location message actual expected))
 (define *verbose-check-infos* '(expression params))
 
 (define (check-info-stack-filter stack mode)
@@ -55,7 +55,7 @@
   (string-join lines "<:LF:>"))
 
 (define (max-name-width stack)
-  (apply max (map check-info-name-width stack)))
+  (apply max 0 (map check-info-name-width stack)))
 
 (define (check-info-name-width check-info)
   (string-length
@@ -134,10 +134,10 @@
   (or failed? here-failed?))
 
 
-;;; run-tests: test-suite * ('simple 'custom 'all) -> (void)
+;;; run-tests: test-suite * ('quiet 'simple 'custom 'all) -> (void)
 ;;; #:mode keyword argument is one of 'simple, 'custom and 'all,
 ;;; it controls how to display the check-info stack.
-;;;   'quiet mode displays message, actual, and excepted;
+;;;   'quiet mode displays message, actual, and expected;
 ;;;   'simple mode displays all in 'quiet mode and name and location;
 ;;;   'custom mode displays all in 'simple mode and user customed check-info;
 ;;;   'all mode displays the whole check-info stack.
