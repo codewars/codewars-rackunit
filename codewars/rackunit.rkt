@@ -64,6 +64,7 @@
 
 (define *least-name-value-space* 2)
 (define *nested-indent* 2)
+(define *pretty-print-columns* 50)
 
 (define (check-info->string info name-width indent-width)
   (define name (check-info-name info))
@@ -72,7 +73,7 @@
 
   (match value
     [(nested-info nested)
-     (cons (format "~a:" name-str)
+     (cons (format "~a" name-str)
            (map (lambda (info)
                   (check-info->string info
                                       name-width
