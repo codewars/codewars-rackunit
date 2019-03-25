@@ -6,5 +6,5 @@
 (define build-deps '())
 
 (define pkg-desc "Rackunit wrapper for Codewars")
-(define version "0.1")
+(define version "0.2")
 (define pkg-authors '(yfzhe))
