@@ -16,34 +16,62 @@
 
 ;;; handle failed test output
 (define (log-exn:test:check e mode)
-  (with-tag "FAILED"
-    (check-infos->string
-     (check-info-stack-filter (exn:test:check-stack e) mode))))
+  (define stack (exn:test:check-stack e))
+  (define content
+    (cond
+      [(eq? mode 'quiet) (check-infos->string/quiet stack)]
+      [else (check-infos->string
+             (check-info-stack-filter stack mode))]))
+  (with-tag "FAILED" content))
 
+;;; 'quiet mode
+(define (check-infos->string/quiet stack)
+  (define (get-info-value/string name)
+    (info-value->string (get-info-value stack name)))
+  (define (get-info-value/string* name)
+    (let ([value (get-info-value stack name)])
+      (cond
+        [(eq? value #f) #f]
+        [(string? value) (format "~a" value)]
+        [else (info-value->string value)])))
+  
+  (define expected (get-info-value/string 'expected))
+  (define actual (get-info-value/string 'actual))
+  (define message (get-info-value/string* 'message))
 
+  (apply string-append
+         "Expected " expected
+         ", but instead got " actual
+         (if message
+             (list "<:LF:>" message)
+             null)))
+
+(define (get-info-value stack name)
+  (ormap (lambda (info)
+           (and (eq? (check-info-name info) name)
+                (check-info-value info)))
+         stack))
+
+;;; 'simple, 'custom, and 'all mode
 ;;; check-info stack filter
-(define *quiet-check-infos* '(message actual expected))
 (define *simple-check-infos* '(name location message actual expected))
 (define *verbose-check-infos* '(expression params))
 
 (define (check-info-stack-filter stack mode)
   (case mode
-    [(quiet) (filter quiet-check-info? stack)]
     [(simple) (filter simple-check-info? stack)]
-    [(custom) (filter not-verbose-check-info? stack)]
+    [(custom) (filter-not verbose-check-info? stack)]
     [(all) stack]))
 
-(define (quiet-check-info? info)
-  (member info *quiet-check-infos* check-info-with-name?))
-(define (simple-check-info? info)
-  (member info *simple-check-infos* check-info-with-name?))
-(define (verbose-check-info? info)
-  (member info *verbose-check-infos* check-info-with-name?))
-(define (not-verbose-check-info? info)
-  (not (verbose-check-info? info)))
+(define (check-info-in? set)
+  (lambda (info)
+    (member info set check-info-with-name?)))
 
 (define (check-info-with-name? info name)
   (eq? (check-info-name info) name))
+
+(define simple-check-info? (check-info-in? *simple-check-infos*))
+(define verbose-check-info? (check-info-in? *verbose-check-infos*))
 
 ;;; display check-infos
 (define (check-infos->string stack)
