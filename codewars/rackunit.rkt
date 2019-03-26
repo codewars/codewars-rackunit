@@ -43,7 +43,7 @@
          "Expected " expected
          ", but instead got " actual
          (if message
-             (list "\nMessage: " message)
+             (list "<:LF:>" message)
              null)))
 
 (define (get-info-value stack name)
