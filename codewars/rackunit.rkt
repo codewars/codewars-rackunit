@@ -3,9 +3,14 @@
          rackunit/private/check-info
          racket/list
          racket/string
-         racket/match)
+         racket/match
+         racket/contract)
 
-(provide run-tests)
+(provide (contract-out
+          [run-tests
+           (->* ((or/c test-case? test-suite?))
+                (#:mode (or/c 'quiet 'simple 'all (listof symbol?)))
+                void)]))
 
 ;;; tags
 (define (with-tag tag value)
@@ -52,16 +57,16 @@
                 (check-info-value info)))
          stack))
 
-;;; 'simple, 'custom, and 'all mode
+;;; 'simple, 'all and custom mode
 ;;; check-info stack filter
-(define *simple-check-infos* '(name location message actual expected))
+(define *simple-check-infos* '(name message actual expected))
 (define *verbose-check-infos* '(expression params))
 
 (define (check-info-stack-filter stack mode)
-  (case mode
-    [(simple) (filter simple-check-info? stack)]
-    [(custom) (filter-not verbose-check-info? stack)]
-    [(all) stack]))
+  (cond
+    [(list? mode) (filter (check-info-in? mode) stack)]      
+    [(eq? mode 'simple) (check-info-stack-filter stack *simple-check-infos*)]
+    [(eq? mode 'all) stack]))
 
 (define (check-info-in? set)
   (lambda (info)
@@ -70,8 +75,6 @@
 (define (check-info-with-name? info name)
   (eq? (check-info-name info) name))
 
-(define simple-check-info? (check-info-in? *simple-check-infos*))
-(define verbose-check-info? (check-info-in? *verbose-check-infos*))
 
 ;;; display check-infos
 (define (check-infos->string stack)
@@ -163,15 +166,15 @@
   (or failed? here-failed?))
 
 
-;;; run-tests: test-suite * ('quiet 'simple 'custom 'all) -> (void)
-;;; #:mode keyword argument is one of 'simple, 'custom and 'all,
+;;; run-tests: test-suite *
+;;;            ('quiet | 'simple | 'all | (listof symbol)) -> (void)
+;;; #:mode keyword argument is one of 'quiet, 'simple, 'all, and a list of symbols.
 ;;; it controls how to display the check-info stack.
-;;;   'quiet mode displays message, actual, and expected;
-;;;   'simple mode displays all in 'quiet mode and name and location;
-;;;   'custom mode displays all in 'simple mode and user customed check-info;
-;;;   'all mode displays the whole check-info stack.
+;;;   'quiet mode displays expected, actual, and message in summary;
+;;;   'simple mode displays name, actual, expected in list;
+;;;   'all mode displays the whole check-info stack;
+;;;   list mode displays any check-info whose name is in the list.
 (define (run-tests test #:mode [mode 'quiet])
   (let ([test-result
          (foldts-test-suite fdown fup (fhere mode) #f test)])
     (when test-result (exit 1))))
-
