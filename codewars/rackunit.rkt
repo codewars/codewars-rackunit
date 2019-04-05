@@ -10,7 +10,7 @@
           [run-tests
            (->* ((or/c test-case? test-suite?))
                 (#:mode (or/c 'quiet 'simple 'all (listof symbol?)))
-                void)]))
+                void?)]))
 
 ;;; tags
 (define (with-tag tag value)
