@@ -43,8 +43,9 @@ Please read [RackUnit document](https://docs.racket-lang.org/rackunit/index.html
 to get more information about RackUnit and its api.
 
 If you want to customize the result output, use [`define-check`](https://docs.racket-lang.org/rackunit/api.html#(form._((lib._rackunit%2Fmain..rkt)._define-check)))
-and [`with-check-info`](https://docs.racket-lang.org/rackunit/api.html#(form._((lib._rackunit%2Fmain..rkt)._with-check-info)));
-and the custom mode of `run-tests` to display the info you need.
+and [`with-check-info`](https://docs.racket-lang.org/rackunit/api.html#(form._((lib._rackunit%2Fmain..rkt)._with-check-info))) 
+to add custom infos; and the custom mode of `run-tests` to display the
+info you need.
 
 A wrapper **function** for custom check will break the location `check-info`
 of checks. If you need location information displayed, please use 
